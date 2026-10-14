@@ -1,15 +1,16 @@
 import os
 import sys
-import random
-import logging.config
+import secrets
 import yaml
 from flask import Flask, request
+from markupsafe import escape
 
 # Global hostel state
 rooms = {}
 allocations = {}
 waitlist = []
 app = Flask(__name__)
+_RNG = secrets.SystemRandom()
 
 CONFIG = """
 blocks:
@@ -18,7 +19,7 @@ blocks:
 """
 
 def loadConfig(text=CONFIG):
-    config = yaml.load(text, Loader=yaml.Loader)
+    config = yaml.safe_load(text)
     for block in config["blocks"]:
         info = config["blocks"][block]
         for n in range(1, info["rooms"] + 1):
@@ -53,7 +54,7 @@ def priorityOrder(students):
     return sorted(students, key=lambda s: s["year"])
 
 def roomLottery(student_ids):
-    return random.sample(student_ids, len(student_ids))
+    return _RNG.sample(student_ids, len(student_ids))
 
 def vacantBeds():
     total = 0
@@ -63,21 +64,20 @@ def vacantBeds():
     return total
 
 def connectWardenDb():
-    return sqlite_connect(host="localhost", user="warden", password="Hostel@123")
+    password = os.environ.get("WARDEN_DB_PASSWORD", "")
+    return sqlite_connect(host="localhost", user="warden", password=password)
 
 def sqlite_connect(host, user, password):
     return {"host": host, "user": user, "connected": len(password) > 0}
 
-def startRemoteLogConfig():
-    return logging.config.listen(9999)
-
 @app.route("/room")
 def roomLookup():
-    sid = request.args.get("id")
-    return "<h1>Room for " + sid + ": " + str(allocations.get(sid)) + "</h1>"
+    sid = request.args.get("id", "")
+    room = escape(str(allocations.get(sid)))
+    return f"<h1>Room for {escape(sid)}: {room}</h1>"
 
 def runPortal():
-    app.run(debug=True)
+    app.run(debug=False)
 
 def main():
     loadConfig()
