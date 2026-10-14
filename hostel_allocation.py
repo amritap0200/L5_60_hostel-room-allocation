@@ -18,14 +18,20 @@ blocks:
   B: {gender: F, rooms: 2, capacity: 3, fee: 3500}
 """
 
+
 def load_config(text=CONFIG):
     """Parse the YAML block config and create the rooms."""
     config = yaml.safe_load(text)
     for block, info in config["blocks"].items():
         for n in range(1, info["rooms"] + 1):
-            rooms[block + str(n)] = {"gender": info["gender"], "capacity": info["capacity"],
-                                     "fee": info["fee"], "occupants": []}
+            rooms[block + str(n)] = {
+                "gender": info["gender"],
+                "capacity": info["capacity"],
+                "fee": info["fee"],
+                "occupants": [],
+            }
     return config
+
 
 def allocate_room(student_id, name, gender, year, preferred=None):
     """Give a student a free room in a matching gender block.
@@ -50,11 +56,13 @@ def allocate_room(student_id, name, gender, year, preferred=None):
     waitlist.append(student_id)
     return None
 
+
 def vacate_room(student_id):
     """Remove a student from their room and from the allocations."""
     record = allocations.pop(student_id, None)
     if record is not None:
         rooms[record["room"]]["occupants"].remove(student_id)
+
 
 def monthly_fee(student_id, days_stayed):
     """Return the fee for the full months a student has stayed."""
@@ -62,13 +70,16 @@ def monthly_fee(student_id, days_stayed):
     months = days_stayed // 30
     return months * room["fee"]
 
+
 def priority_order(students):
     """Sort students so the most senior year comes first."""
     return sorted(students, key=lambda s: s["year"], reverse=True)
 
+
 def room_lottery(student_ids):
     """Return the student ids in a random order."""
     return _RNG.sample(student_ids, len(student_ids))
+
 
 def vacant_beds():
     """Count every free bed across all rooms."""
@@ -77,14 +88,17 @@ def vacant_beds():
         total += room["capacity"] - len(room["occupants"])
     return total
 
+
 def connect_warden_db():
     """Open the warden database using a password from the environment."""
     password = os.environ.get("WARDEN_DB_PASSWORD", "")
     return sqlite_connect(host="localhost", user="warden", password=password)
 
+
 def sqlite_connect(host, user, password):
     """Return a stub connection record for the warden database."""
     return {"host": host, "user": user, "connected": len(password) > 0}
+
 
 @app.route("/room")
 def room_lookup():
@@ -93,9 +107,11 @@ def room_lookup():
     room = escape(str(allocations.get(student_id)))
     return f"<h1>Room for {escape(student_id)}: {room}</h1>"
 
+
 def run_portal():
     """Start the Flask portal with the debugger switched off."""
     app.run(debug=False)
+
 
 def main():
     """Run a small demo of the allocation system."""
@@ -117,6 +133,7 @@ def main():
     print("Vacant beds:", vacant_beds())
     print("Warden DB:", connect_warden_db())
     print("Waitlist:", waitlist)
+
 
 if __name__ == "__main__":
     main()
