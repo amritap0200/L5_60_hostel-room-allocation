@@ -1,9 +1,13 @@
 # Lab 5 Static Code Analysis Issues
 
 Name: Aniyath Amrita Pradeep
+
 Section: H
+
 SRN: PES2UG24CS919
+
 File analysed: hostel_allocation.py
+
 
 ## Summary of results
 
